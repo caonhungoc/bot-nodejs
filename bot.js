@@ -1,6 +1,6 @@
 // Requiring module
-const { Telegraf, Markup } = require('telegraf')
-const LocalSession = require('telegraf-session-local')
+const { Telegraf, Markup } = require('telegraf');
+const LocalSession = require('telegraf-session-local');
 
 let s1 = s2 = 0;
 
@@ -14,39 +14,43 @@ let count = 0;
 bot.use((new LocalSession({ database: 'example_db.json' })).middleware())
 
 bot.command('tinh', async (ctx) => {
-    count++;
+    // count++;
     ctx.session.count = 1;
-    await ctx.reply('nhap so thu nhat');
+    ctx.session.s1 = 0;
+    ctx.session.s2 = 0
+    await ctx.reply('Nhập số thứ nhất');
 })
 
 bot.hears('/exit', async(ctx) => {
-    count = 0;
+    ctx.session.count = 0;
+    ctx.session.s1 = 0;
+    ctx.session.s2 = 0
     await ctx.reply('bye bye');
 })
 
 bot.on('text', async (ctx) => {
-    if(count >= 1) {
+    if(ctx.session.count >= 1) {
         console.log('ctx.message = ', ctx.message.text);
         if(!isNaN(Number(ctx.message.text))) {
-            count++;
-            if(count == 2) {
-                s1 = Number(ctx.message.text);
-                await ctx.reply('so thu nhat = ' + ctx.message.text);
-                await ctx.reply('nhap so thu 2');
-            } else if (count == 3) {
-                s2 = Number(ctx.message.text);
-                await ctx.reply('so thu 2 = ' + ctx.message.text);
-                count++;
+            ctx.session.count++;
+            if(ctx.session.count == 2) {
+                ctx.session.s1 = Number(ctx.message.text);
+                await ctx.reply('Số thứ nhất bạn nhập = ' + ctx.message.text);
+                await ctx.reply('Nhập số thứ 2');
+            } else if (ctx.session.count == 3) {
+                ctx.session.s2 = Number(ctx.message.text);
+                await ctx.reply('Số thứ 2 bạn nhập = ' + ctx.message.text);
+                ctx.session.count++;
             }
             
         }
         else {
-            await ctx.reply('wrong format');
+            await ctx.reply('Sai định dạng, phiền bạn nhập lại');
         }
-        if(count === 4) {
+        if(ctx.session.count === 4) {
             // count = 0;
             return ctx.reply(
-                `Chon phep tinh mong muon cho 2 so: ${s1} va ${s2}`,
+                `Chọn phép tính mong muốn cho 2 số : ${ctx.session.s1} và ${ctx.session.s2}`,
                 Markup.inlineKeyboard([
                     Markup.button.callback('+', '+'),
                     Markup.button.callback('-', '-'),
@@ -59,37 +63,39 @@ bot.on('text', async (ctx) => {
 });
 
 bot.action('+', (ctx, next) => {
-    if(count != 0) {
-        count = 0;
-        return ctx.reply('+ = ' + (s1+s2));
+    if(ctx.session.count != 0) {
+        ctx.session.count = 0;
+        return ctx.reply(`${ctx.session.s1} + ${ctx.session.s2} = ${ctx.session.s1 + ctx.session.s2}`);
     }
 })
 
 bot.action('-', (ctx, next) => {
-    console.log('-coumt = ', count);
-    if (count != 0) {
-        count = 0;
-        return ctx.reply('- = '+ (s1 - s2));
+    if (ctx.session.count != 0) {
+        ctx.session.count = 0;
+        return ctx.reply(`${ctx.session.s1} - ${ctx.session.s2} = ${ctx.session.s1 - ctx.session.s2}`);
     }
 })
 
 bot.action('*', (ctx, next) => {
-    if(count != 0) {
-        count = 0;
-        return ctx.reply('* = '+ (s1*s2));
-        
+    if(ctx.session.count != 0) {
+        ctx.session.count = 0;
+        return ctx.reply(`${ctx.session.s1} * ${ctx.session.s2} = ${ctx.session.s1 * ctx.session.s2}`);
     }
 })
 
 bot.action('/', (ctx, next) => {
-    if( count != 0) {
-        count = 0;
-        if(s2 ==0) return ctx.reply('khong the chia cho 0');
-        return ctx.reply('/ = ' + (s1/s2));
+    if(ctx.session.count != 0) {
+        ctx.session.count = 0;
+        if (ctx.session.s2 == 0) return ctx.reply('Không thể chia cho 0!');
+        return ctx.reply(`${ctx.session.s1} / ${ctx.session.s2} = ${ctx.session.s1 / ctx.session.s2}`);
     }
     
 })
 
-  
+function resetCtx(ctx) {
+    ctx.session.count = 0;
+    ctx.session.s1 = 0;
+    ctx.session.s2 = 0;
+}
 // Launch the program
 bot.launch()
